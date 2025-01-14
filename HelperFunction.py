@@ -6,6 +6,8 @@ import nltk
 from tqdm import tqdm
 tqdm.pandas()
 from SA_classes import config
+from langdetect import detect, DetectorFactory
+from langdetect.lang_detect_exception import LangDetectException
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
@@ -13,7 +15,6 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 def clean_text(text, lemmatizer, stop_words):
-
     text = text.lower()
     text = re.sub(r'[^\w\s]','',text, re.UNICODE)
     text = re.sub('[^a-zA-Z]', ' ', text)  # Remove non-alphabetic characters
@@ -23,6 +24,18 @@ def clean_text(text, lemmatizer, stop_words):
     text = [word for word in text if not word in stop_words]
     text = " ".join(text)
     return text
+
+def clean_text_rulebooks(text, lemmatizer, stop_words, valid_words, artifact_words, min_word_length=3):
+    text = text.lower()
+    text = re.sub(r'[^a-z\s]', '', text) # remove anything that's not a letter or space
+    text = re.sub(r'\s+', ' ', text).strip() # remove extra spaces
+    text = [lemmatizer.lemmatize(token) for token in text.split() if len(token) >= min_word_length and token not in stop_words] # lemmatize and filter stop words
+    text = [word for word in text if word in valid_words] # remove gibberish words
+    text = re.sub(r'(.)\1+', r'\1', " ".join(text))  # removes repeated characters
+    text = " ".join([word for word in text.split() if word not in artifact_words])
+    
+    return text
+
 
 def word_tokenizer(text):
     text = text.lower()
